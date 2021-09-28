@@ -1496,6 +1496,7 @@ unsafe impl<T> wasmtime_runtime::Store for StoreInner<T> {
         (&mut inner.externref_activations_table, &inner.modules)
     }
 
+    #[cfg(not(feature = "async"))]
     fn limiter_memory_growing(
         &mut self,
         current: usize,
@@ -1509,17 +1510,94 @@ unsafe impl<T> wasmtime_runtime::Store for StoreInner<T> {
         }
     }
 
+    #[cfg(feature = "async")]
+    fn limiter_memory_growing(
+        &mut self,
+        current: usize,
+        desired: usize,
+        maximum: Option<usize>,
+    ) -> bool {
+        if self.async_support() {
+            let async_cx = self.async_cx();
+            if let Some(limiter) = <Self>::limiter(self) {
+                unsafe {
+                    async_cx
+                        .block_on(
+                            limiter
+                                .memory_growing_async(current, desired, maximum)
+                                .as_mut(),
+                        )
+                        .expect("limiter should never trap")
+                }
+            } else {
+                true
+            }
+        } else {
+            if let Some(limiter) = <Self>::limiter(self) {
+                limiter.memory_growing(current, desired, maximum)
+            } else {
+                true
+            }
+        }
+    }
+
+    #[cfg(not(feature = "async"))]
     fn limiter_memory_grow_failed(&mut self, error: &anyhow::Error) {
         if let Some(limiter) = <Self>::limiter(self) {
             limiter.memory_grow_failed(error)
         }
     }
 
+    #[cfg(feature = "async")]
+    fn limiter_memory_grow_failed(&mut self, error: &anyhow::Error) {
+        if self.async_support() {
+            let async_cx = self.async_cx();
+            if let Some(limiter) = <Self>::limiter(self) {
+                unsafe {
+                    async_cx
+                        .block_on(limiter.memory_grow_failed_async(error).as_mut())
+                        .expect("limiter should never trap")
+                }
+            }
+        } else {
+            if let Some(limiter) = <Self>::limiter(self) {
+                limiter.memory_grow_failed(error)
+            }
+        }
+    }
+
+    #[cfg(not(feature = "async"))]
     fn limiter_table_growing(&mut self, current: u32, desired: u32, maximum: Option<u32>) -> bool {
         if let Some(limiter) = <Self>::limiter(self) {
             limiter.table_growing(current, desired, maximum)
         } else {
             true
+        }
+    }
+
+    #[cfg(feature = "async")]
+    fn limiter_table_growing(&mut self, current: u32, desired: u32, maximum: Option<u32>) -> bool {
+        if self.async_support() {
+            let async_cx = self.async_cx();
+            if let Some(limiter) = <Self>::limiter(self) {
+                unsafe {
+                    async_cx
+                        .block_on(
+                            limiter
+                                .table_growing_async(current, desired, maximum)
+                                .as_mut(),
+                        )
+                        .expect("limiter should never trap")
+                }
+            } else {
+                true
+            }
+        } else {
+            if let Some(limiter) = <Self>::limiter(self) {
+                limiter.table_growing(current, desired, maximum)
+            } else {
+                true
+            }
         }
     }
 
