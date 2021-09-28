@@ -418,11 +418,11 @@ impl<T> Store<T> {
                 modules: ModuleRegistry::default(),
                 host_trampolines: HashMap::default(),
                 instance_count: 0,
-                instance_limit: wasmtime_runtime::DEFAULT_INSTANCE_LIMIT,
+                instance_limit: crate::DEFAULT_INSTANCE_LIMIT,
                 memory_count: 0,
-                memory_limit: wasmtime_runtime::DEFAULT_MEMORY_LIMIT,
+                memory_limit: crate::DEFAULT_MEMORY_LIMIT,
                 table_count: 0,
-                table_limit: wasmtime_runtime::DEFAULT_TABLE_LIMIT,
+                table_limit: crate::DEFAULT_TABLE_LIMIT,
                 fuel_adj: 0,
                 #[cfg(feature = "async")]
                 async_state: AsyncState {
@@ -1496,8 +1496,31 @@ unsafe impl<T> wasmtime_runtime::Store for StoreInner<T> {
         (&mut inner.externref_activations_table, &inner.modules)
     }
 
-    fn limiter(&mut self) -> Option<&mut dyn wasmtime_runtime::ResourceLimiter> {
-        <Self>::limiter(self)
+    fn limiter_memory_growing(
+        &mut self,
+        current: usize,
+        desired: usize,
+        maximum: Option<usize>,
+    ) -> bool {
+        if let Some(limiter) = <Self>::limiter(self) {
+            limiter.memory_growing(current, desired, maximum)
+        } else {
+            true
+        }
+    }
+
+    fn limiter_memory_grow_failed(&mut self, error: &anyhow::Error) {
+        if let Some(limiter) = <Self>::limiter(self) {
+            limiter.memory_grow_failed(error)
+        }
+    }
+
+    fn limiter_table_growing(&mut self, current: u32, desired: u32, maximum: Option<u32>) -> bool {
+        if let Some(limiter) = <Self>::limiter(self) {
+            limiter.table_growing(current, desired, maximum)
+        } else {
+            true
+        }
     }
 
     fn out_of_gas(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
