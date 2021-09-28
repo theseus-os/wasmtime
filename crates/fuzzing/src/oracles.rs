@@ -83,14 +83,35 @@ impl StoreLimits {
     }
 }
 
+#[async_trait::async_trait]
 impl ResourceLimiter for StoreLimits {
     fn memory_growing(&mut self, current: usize, desired: usize, _maximum: Option<usize>) -> bool {
         self.alloc(desired - current)
     }
+    async fn memory_growing_async(
+        &mut self,
+        current: usize,
+        desired: usize,
+        maximum: Option<usize>,
+    ) -> bool {
+        self.memory_growing(current, desired, maximum)
+    }
+
+    fn memory_grow_failed(&mut self, _error: &anyhow::Error) {}
+    async fn memory_grow_failed_async(&mut self, _error: &anyhow::Error) {}
 
     fn table_growing(&mut self, current: u32, desired: u32, _maximum: Option<u32>) -> bool {
         let delta = (desired - current) as usize * std::mem::size_of::<usize>();
         self.alloc(delta)
+    }
+
+    async fn table_growing_async(
+        &mut self,
+        current: u32,
+        desired: u32,
+        maximum: Option<u32>,
+    ) -> bool {
+        self.table_growing(current, desired, maximum)
     }
 }
 

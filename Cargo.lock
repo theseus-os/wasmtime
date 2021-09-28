@@ -3759,6 +3759,7 @@ version = "0.19.0"
 dependencies = [
  "anyhow",
  "arbitrary",
+ "async-trait",
  "env_logger 0.8.3",
  "log",
  "rayon",
