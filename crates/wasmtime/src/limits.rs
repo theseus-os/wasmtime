@@ -9,6 +9,7 @@ pub const DEFAULT_MEMORY_LIMIT: usize = 10000;
 ///
 /// An instance can be created with a resource limiter so that hosts can take into account
 /// non-WebAssembly resource usage to determine if a linear memory or table should grow.
+#[cfg_attr(feature = "async", async_trait::async_trait)]
 pub trait ResourceLimiter {
     /// Notifies the resource limiter that an instance's linear memory has been
     /// requested to grow.
@@ -30,13 +31,28 @@ pub trait ResourceLimiter {
     /// this method.
     fn memory_growing(&mut self, current: usize, desired: usize, maximum: Option<usize>) -> bool;
 
+    /// Asynchronous version of `memory_growing`. This method is called for memory
+    /// grows on asynchronous stores, instead of `memory_growing`.
+    #[cfg(feature = "async")]
+    async fn memory_growing_async(
+        &mut self,
+        current: usize,
+        desired: usize,
+        maximum: Option<usize>,
+    ) -> bool;
+
     /// Notifies the resource limiter that growing a linear memory, permitted by
     /// the `memory_growing` method, has failed.
     ///
     /// Reasons for failure include: the growth exceeds the `maximum` passed to
     /// `memory_growing`, or the operating system failed to allocate additional
     /// memory. In that case, `error` might be downcastable to a `std::io::Error`.
-    fn memory_grow_failed(&mut self, _error: &anyhow::Error) {}
+    fn memory_grow_failed(&mut self, error: &anyhow::Error);
+
+    /// Asynchronous version of `memory_grow_failed`. This method is called for memory
+    /// grows on asynchronous stores, instead of `memory_grow_failed`.
+    #[cfg(feature = "async")]
+    async fn memory_grow_failed_async(&mut self, error: &anyhow::Error);
 
     /// Notifies the resource limiter that an instance's table has been requested to grow.
     ///
@@ -49,6 +65,16 @@ pub trait ResourceLimiter {
     /// `false` if not permitted. Returning `true` when a maximum has been exceeded will have no
     /// effect as the table will not grow.
     fn table_growing(&mut self, current: u32, desired: u32, maximum: Option<u32>) -> bool;
+
+    /// Asynchronous version of `table_growing`. This method is called for table
+    /// grows on asynchronous stores, instead of `table_growing`.
+    #[cfg(feature = "async")]
+    async fn table_growing_async(
+        &mut self,
+        current: u32,
+        desired: u32,
+        maximum: Option<u32>,
+    ) -> bool;
 
     /// The maximum number of instances that can be created for a `Store`.
     ///
@@ -164,6 +190,7 @@ impl Default for StoreLimits {
     }
 }
 
+#[cfg_attr(feature = "async", async_trait::async_trait)]
 impl ResourceLimiter for StoreLimits {
     fn memory_growing(&mut self, _current: usize, desired: usize, _maximum: Option<usize>) -> bool {
         match self.memory_size {
@@ -172,11 +199,36 @@ impl ResourceLimiter for StoreLimits {
         }
     }
 
+    #[cfg(feature = "async")]
+    async fn memory_growing_async(
+        &mut self,
+        current: usize,
+        desired: usize,
+        maximum: Option<usize>,
+    ) -> bool {
+        self.memory_growing(current, desired, maximum)
+    }
+
+    fn memory_grow_failed(&mut self, _error: &anyhow::Error) {}
+
+    #[cfg(feature = "async")]
+    async fn memory_grow_failed_async(&mut self, _error: &anyhow::Error) {}
+
     fn table_growing(&mut self, _current: u32, desired: u32, _maximum: Option<u32>) -> bool {
         match self.table_elements {
             Some(limit) if desired > limit => false,
             _ => true,
         }
+    }
+
+    #[cfg(feature = "async")]
+    async fn table_growing_async(
+        &mut self,
+        current: u32,
+        desired: u32,
+        maximum: Option<u32>,
+    ) -> bool {
+        self.table_growing(current, desired, maximum)
     }
 
     fn instances(&self) -> usize {
