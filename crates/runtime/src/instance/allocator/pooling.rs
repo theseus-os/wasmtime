@@ -7,10 +7,9 @@
 //! Using the pooling instance allocator can speed up module instantiation
 //! when modules can be constrained based on configurable limits.
 
-use super::borrow_limiter;
 use super::{
     initialize_instance, initialize_vmcontext, InstanceAllocationRequest, InstanceAllocator,
-    InstanceHandle, InstantiationError, ResourceLimiter,
+    InstanceHandle, InstantiationError,
 };
 use crate::{instance::Instance, Memory, Mmap, Table, VMContext};
 use anyhow::{anyhow, bail, Context, Result};
@@ -385,19 +384,16 @@ impl InstancePool {
         instance.host_state = std::mem::replace(&mut req.host_state, Box::new(()));
         instance.wasm_data = &*req.wasm_data;
 
-        let mut limiter = req.store.and_then(|s| (*s).limiter());
         Self::set_instance_memories(
             instance,
             self.memories.get(index),
             self.memories.max_wasm_pages,
-            borrow_limiter(&mut limiter),
         )?;
 
         Self::set_instance_tables(
             instance,
             self.tables.get(index).map(|x| x as *mut usize),
             self.tables.max_elements,
-            borrow_limiter(&mut limiter),
         )?;
 
         initialize_vmcontext(instance, req);
@@ -503,7 +499,6 @@ impl InstancePool {
         instance: &mut Instance,
         mut memories: impl Iterator<Item = *mut u8>,
         max_pages: u64,
-        mut limiter: Option<&mut dyn ResourceLimiter>,
     ) -> Result<(), InstantiationError> {
         let module = instance.module.as_ref();
 
@@ -523,7 +518,7 @@ impl InstancePool {
                     plan,
                     memory,
                     commit_memory_pages,
-                    borrow_limiter(&mut limiter),
+                    &mut Some(unsafe { &mut *instance.store() }),
                 )
                 .map_err(InstantiationError::Resource)?,
             );
@@ -538,7 +533,6 @@ impl InstancePool {
         instance: &mut Instance,
         mut tables: impl Iterator<Item = *mut usize>,
         max_elements: u32,
-        mut limiter: Option<&mut dyn ResourceLimiter>,
     ) -> Result<(), InstantiationError> {
         let module = instance.module.as_ref();
 
@@ -555,7 +549,7 @@ impl InstancePool {
 
             let table = unsafe { std::slice::from_raw_parts_mut(base, max_elements as usize) };
             instance.tables.push(
-                Table::new_static(plan, table, borrow_limiter(&mut limiter))
+                Table::new_static(plan, table, &mut Some(unsafe { &mut *instance.store() }))
                     .map_err(InstantiationError::Resource)?,
             );
         }
