@@ -518,7 +518,10 @@ impl InstancePool {
                     plan,
                     memory,
                     commit_memory_pages,
-                    &mut Some(unsafe { &mut *instance.store() }),
+                    &mut match instance.optional_store() {
+                        Some(s) => Some(unsafe { &mut *s }),
+                        None => None,
+                    },
                 )
                 .map_err(InstantiationError::Resource)?,
             );
@@ -549,8 +552,15 @@ impl InstancePool {
 
             let table = unsafe { std::slice::from_raw_parts_mut(base, max_elements as usize) };
             instance.tables.push(
-                Table::new_static(plan, table, &mut Some(unsafe { &mut *instance.store() }))
-                    .map_err(InstantiationError::Resource)?,
+                Table::new_static(
+                    plan,
+                    table,
+                    &mut match instance.optional_store() {
+                        Some(s) => Some(unsafe { &mut *s }),
+                        None => None,
+                    },
+                )
+                .map_err(InstantiationError::Resource)?,
             );
         }
 

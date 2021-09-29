@@ -224,6 +224,18 @@ impl Instance {
         ptr
     }
 
+    /// The same as [`Self::store()`], except instead of panicking when the
+    /// store hasn't been configured yet, it returns None.
+    #[inline]
+    pub fn optional_store(&self) -> Option<*mut dyn Store> {
+        let ptr = unsafe { *self.vmctx_plus_offset::<*mut dyn Store>(self.offsets.vmctx_store()) };
+        if !ptr.is_null() {
+            Some(ptr)
+        } else {
+            None
+        }
+    }
+
     pub unsafe fn set_store(&mut self, store: *mut dyn Store) {
         *self.vmctx_plus_offset(self.offsets.vmctx_store()) = store;
     }
