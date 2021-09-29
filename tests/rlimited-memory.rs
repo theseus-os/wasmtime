@@ -12,6 +12,7 @@ struct MemoryGrowFailureDetector {
     error: Option<String>,
 }
 
+#[async_trait::async_trait]
 impl ResourceLimiter for MemoryGrowFailureDetector {
     fn memory_growing(&mut self, current: usize, desired: usize, _maximum: Option<usize>) -> bool {
         self.current = current;
@@ -19,12 +20,34 @@ impl ResourceLimiter for MemoryGrowFailureDetector {
         true
     }
 
+    async fn memory_growing_async(
+        &mut self,
+        current: usize,
+        desired: usize,
+        maximum: Option<usize>,
+    ) -> bool {
+        self.memory_growing(current, desired, maximum)
+    }
+
     fn memory_grow_failed(&mut self, err: &anyhow::Error) {
         self.error = Some(err.to_string());
     }
 
+    async fn memory_grow_failed_async(&mut self, err: &anyhow::Error) {
+        self.memory_grow_failed(err)
+    }
+
     fn table_growing(&mut self, _current: u32, _desired: u32, _maximum: Option<u32>) -> bool {
         true
+    }
+
+    async fn table_growing_async(
+        &mut self,
+        current: u32,
+        desired: u32,
+        maximum: Option<u32>,
+    ) -> bool {
+        self.table_growing(current, desired, maximum)
     }
 }
 

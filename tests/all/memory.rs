@@ -310,14 +310,39 @@ fn massive_64_bit_still_limited() -> Result<()> {
         hit: bool,
     }
 
+    #[async_trait::async_trait]
     impl ResourceLimiter for MyLimiter {
-        fn memory_growing(&mut self, _request: usize, _min: usize, _max: Option<usize>) -> bool {
+        fn memory_growing(
+            &mut self,
+            _current: usize,
+            _request: usize,
+            _max: Option<usize>,
+        ) -> bool {
             self.hit = true;
             true
         }
+        async fn memory_growing_async(
+            &mut self,
+            current: usize,
+            request: usize,
+            max: Option<usize>,
+        ) -> bool {
+            self.memory_growing(current, request, max)
+        }
 
-        fn table_growing(&mut self, _request: u32, _min: u32, _max: Option<u32>) -> bool {
+        fn memory_grow_failed(&mut self, _error: &anyhow::Error) {}
+        async fn memory_grow_failed_async(&mut self, _error: &anyhow::Error) {}
+
+        fn table_growing(&mut self, _current: u32, _request: u32, _max: Option<u32>) -> bool {
             unreachable!()
+        }
+        async fn table_growing_async(
+            &mut self,
+            current: u32,
+            request: u32,
+            max: Option<u32>,
+        ) -> bool {
+            self.table_growing(current, request, max)
         }
     }
 }
