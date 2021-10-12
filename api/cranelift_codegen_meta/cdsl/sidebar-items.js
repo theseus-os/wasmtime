@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["camel_case","Convert the string `s` to CamelCase."]],"mod":[["formats",""],["instructions",""],["isa",""],["operands",""],["settings",""],["type_inference",""],["types","Cranelift ValueType hierarchy"],["typevar",""]]});
