@@ -332,15 +332,16 @@ impl Mmap {
         }
 
         // Commit the accessible size.
-        let ptr = self.ptr as *const u8;
-        unsafe {
-            region::protect(ptr.add(start), len, region::Protection::READ_WRITE)
-                .map_err(anyhow::Error::msg)?;
+        #[cfg(not(target_os = "theseus"))] {
+            let ptr = self.ptr as *const u8;
+            unsafe {
+                region::protect(ptr.add(start), len, region::Protection::READ_WRITE)
+                    .map_err(anyhow::Error::msg)?;
+            }
+
+            Ok(())
         }
-
-        Ok(())
     }
-
     /// Make the memory starting at `start` and extending for `len` bytes accessible.
     /// `start` and `len` must be native page-size multiples and describe a range within
     /// `self`'s reserved memory.
@@ -455,11 +456,14 @@ impl Mmap {
 
         // If we're not on Windows or if we're on Windows with an anonymous
         // mapping then we can use the `region` crate.
-        region::protect(base, len, region::Protection::READ_WRITE)
-            .map_err(anyhow::Error::msg)?;
-        Ok(())
-    }
+        #[cfg(not(target_os = "theseus"))] {
+            region::protect(base, len, region::Protection::READ_WRITE)
+                .map_err(anyhow::Error::msg)?;
+    
+            Ok(())
 
+        }
+    }
     /// Makes the specified `range` within this `Mmap` to be read/execute.
     pub unsafe fn make_executable(&self, range: Range<usize>) -> Result<()> {
         assert!(range.start <= self.len());
@@ -479,12 +483,14 @@ impl Mmap {
             ).map_err(anyhow::Error::msg);
         }
 
-        region::protect(
-            self.as_ptr().add(range.start),
-            range.end - range.start,
-            region::Protection::READ_EXECUTE,
-        ).map_err(anyhow::Error::msg)?;
-        Ok(())
+        #[cfg(not(target_os = "theseus"))] {
+            region::protect(
+                self.as_ptr().add(range.start),
+                range.end - range.start,
+                region::Protection::READ_EXECUTE,
+            ).map_err(anyhow::Error::msg)?;
+            Ok(())
+        }
     }
 }
 
