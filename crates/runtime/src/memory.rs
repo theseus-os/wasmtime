@@ -3,7 +3,7 @@
 //! `RuntimeLinearMemory` is to WebAssembly linear memories what `Table` is to WebAssembly tables.
 
 #[cfg(not(feature = "std"))]
-use ::alloc::{boxed::Box, format}; // needed for anyhow macros
+use ::alloc::boxed::Box; // needed for anyhow macros
 
 use crate::mmap::Mmap;
 use crate::vmcontext::VMMemoryDefinition;

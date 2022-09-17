@@ -1,16 +1,23 @@
 //! Low-level abstraction for allocating and managing zero-filled pages
 //! of memory.
-
+#[cfg(any(unix, windows))]
 use anyhow::anyhow;
-use anyhow::{Context, Result};
+
+use anyhow::Result;
 use more_asserts::assert_le;
+
+#[cfg(any(unix, windows))]
 use core::convert::TryFrom;
+
 use core::ops::Range;
+
+#[cfg(any(unix, windows))]
 use core::ptr;
+
 use core::slice;
 
 #[cfg(not(feature = "std"))]
-use ::alloc::{vec::Vec};
+use ::alloc::vec::Vec;
 
 #[cfg(feature = "std")]
 use std::{fs::File, path::Path};
@@ -164,6 +171,7 @@ impl Mmap {
 
         #[cfg(target_os = "theseus")]
         {
+            let _path = path;
             todo!("Mmap::from_file() is unimplemented for Theseus");
         }
 
@@ -448,6 +456,8 @@ impl Mmap {
         // Theseus doesn't currently allow one to remap only *part* of a `MappedPages` region,
         // so we just remap the entire region at once.
         #[cfg(target_os = "theseus")] {
+            let _base = base;
+            let _len = len;
             return self.theseus_mp.lock().remap(
                 &mut theseus_memory::get_kernel_mmi_ref().unwrap().lock().page_table,
                 theseus_memory::EntryFlags::PRESENT | theseus_memory::EntryFlags::WRITABLE, // read/write

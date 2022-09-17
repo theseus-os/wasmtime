@@ -18,7 +18,7 @@ use rand::{Rng, SeedableRng};
 use core::convert::TryFrom;
 use core::marker;
 use core::mem;
-use ::alloc::{boxed::Box, format, vec::Vec, sync::Arc};
+use ::alloc::{boxed::Box, vec::Vec, sync::Arc};
 
 #[cfg(not(target_os = "theseus"))]
 use std::sync::Mutex;
