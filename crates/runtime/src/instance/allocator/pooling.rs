@@ -23,7 +23,7 @@ use ::alloc::{boxed::Box, vec::Vec, sync::Arc};
 #[cfg(not(target_os = "theseus"))]
 use std::sync::Mutex;
 #[cfg(target_os = "theseus")]
-use mutex_sleep::MutexSleep as Mutex;
+use sync_block::std_api::Mutex;
 
 use wasmtime_environ::{
     EntitySet, HostPtr, MemoryStyle, Module, PrimaryMap, Tunables, VMOffsets, VMOffsetsFields,

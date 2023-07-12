@@ -10,7 +10,7 @@ use ::alloc::{boxed::Box, vec::Vec};
 #[cfg(feature = "std")]
 use std::sync::Mutex;
 #[cfg(target_os = "theseus")]
-use mutex_sleep::MutexSleep as Mutex;
+use sync_block::std_api::Mutex;
 
 #[repr(C)]
 struct JITCodeEntry {

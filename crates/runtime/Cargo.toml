@@ -49,8 +49,8 @@ theseus_std = { path = "../../../../ports/theseus_std" }
 theseus_memory = { path = "../../../../kernel/memory", package = "memory" }
 theseus_task = { path = "../../../../kernel/task", package = "task" }
 theseus_signal_handler = { path = "../../../../kernel/signal_handler", package = "signal_handler" }
-mutex_sleep = { path = "../../../../kernel/mutex_sleep" }
 spin = "0.9.4"
+sync_block = { path = "../../../../kernel/sync_block", features = ["std-api"] }
 
 
 [target.'cfg(target_os = "macos")'.dependencies]

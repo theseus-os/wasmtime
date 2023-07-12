@@ -9,7 +9,7 @@ use std::{
 #[cfg(not(feature = "std"))]
 use hashbrown::{HashMap, hash_map::Entry};
 #[cfg(target_os = "theseus")]
-use theseus_mutex::RwLockSleep as RwLock;
+use theseus_mutex::std_api::RwLock;
 
 use core::convert::TryFrom;
 use alloc::{sync::Arc, vec::Vec};

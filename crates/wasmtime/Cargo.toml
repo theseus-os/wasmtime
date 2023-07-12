@@ -45,7 +45,7 @@ core2 = { version = "0.4.0", default-features = false, features = ["alloc", "nig
 psm = "0.1.11"  ## Not used in Theseus
 
 [target.'cfg(target_os = "theseus")'.dependencies]
-theseus_mutex = { path = "../../../../kernel/mutex_sleep", package = "mutex_sleep" }
+theseus_mutex = { path = "../../../../kernel/sync_block", package = "sync_block", features = ["std-api"] }
 theseus_std = { path = "../../../../ports/theseus_std" }
 theseus_catch_unwind = { path = "../../../../kernel/catch_unwind", package = "catch_unwind" }
 

@@ -9,7 +9,7 @@ use std::{
 #[cfg(not(feature = "std"))]
 use alloc::{collections::BTreeMap, string::{String, ToString}, sync::Arc, vec::Vec};
 #[cfg(target_os = "theseus")]
-use theseus_mutex::RwLockSleep as RwLock;
+use theseus_mutex::std_api::RwLock;
 
 use wasmtime_environ::{EntityRef, FilePos, StackMap, TrapCode};
 use wasmtime_jit::CompiledModule;
